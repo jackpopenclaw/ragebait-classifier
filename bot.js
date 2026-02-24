@@ -2,7 +2,43 @@
 // 50+ detection features
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
+
+// Load ASCII art for ragebait responses
+let asciiArt = '';
+try {
+  const possiblePaths = [
+    path.join(__dirname, 'ascii_art.txt'),
+    path.join(__dirname, '..', 'ascii_art.txt'),
+    path.join(process.cwd(), 'ascii_art.txt')
+  ];
+  
+  for (const artPath of possiblePaths) {
+    if (fs.existsSync(artPath)) {
+      asciiArt = fs.readFileSync(artPath, 'utf8');
+      console.log('✅ ASCII art loaded for ragebait responses');
+      break;
+    }
+  }
+  
+  if (!asciiArt) {
+    // Default cat art if file not found
+    asciiArt = `
+    /\\_____/\\
+   /  o   o  \\
+  ( ==  ^  == )
+   )         (
+  (           )
+ ( (  )   (  ) )
+(__(__)___(__)__)
+    🚩 RAGEBAIT DETECTED 🚩
+    `;
+  }
+} catch (err) {
+  console.log('⚠️ Could not load ASCII art:', err.message);
+}
 
 class RagebaitClassifier {
   constructor() {
@@ -349,10 +385,22 @@ client.on('messageCreate', async (message) => {
     messageStats.flagged[result.category]++;
   }
   
-  // Optional: DM for extreme cases
-  // if (result.category === 'extreme') {
-  //   await sendAnalysis(message, result);
-  // }
+  // Send ASCII art for high/extreme ragebait
+  if ((result.category === 'high' || result.category === 'extreme') && asciiArt) {
+    try {
+      // Truncate if too long for Discord (max 2000 chars)
+      const artToSend = asciiArt.length > 1900 
+        ? asciiArt.substring(0, 1900) + '\n... [art truncated]'
+        : asciiArt;
+      
+      await message.reply({
+        content: `🐱 **Ragebait detected! Enjoy this ASCII cat:**\n\`\`\`\n${artToSend}\n\`\`\``,
+        allowedMentions: { repliedUser: false }
+      });
+    } catch (err) {
+      console.log('Failed to send ASCII art:', err.message);
+    }
+  }
 });
 
 async function sendAnalysis(message, result) {
