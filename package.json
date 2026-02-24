@@ -1,0 +1,20 @@
+{
+  "name": "ragebait-classifier",
+  "version": "1.0.0",
+  "description": "Discord bot that detects ragebait messages",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js"
+  },
+  "keywords": ["discord", "bot", "ragebait", "classifier"],
+  "author": "Lyle",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
