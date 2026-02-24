@@ -1,65 +1,168 @@
-// Ragebait Classifier Bot for Discord
-// Detects ragebait messages and labels them
+// Ragebait Classifier Bot for Discord v2.0
+// 30+ detection features
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 require('dotenv').config();
 
 class RagebaitClassifier {
   constructor() {
-    // Ragebait patterns with weights: [regex, weight, reason]
-    this.patterns = [
-      [/^[^a-z]*[A-Z\s\d\W]{10,}[^a-z]*$/, 0.3, "ALL CAPS yelling"],
-      [/!{3,}/g, 0.2, "Exclamation spam"],
-      [/\?{3,}/g, 0.15, "Question spam"],
-      [/\b(outraged|disgusting|pathetic|horrible|terrible|awful|unbelievable|shocking|appalling)\b/gi, 0.25, "Outrage language"],
-      [/\b(you won't believe|this is why|the real reason|what they don't want you to know|mind blown)\b/gi, 0.35, "Clickbait phrase"],
-      [/\b(liberals|conservatives|democrats|republicans|leftists|right-wingers|snowflakes|nazis)\b.*\b(are|all|always|never)\b/gi, 0.3, "Divisive generalization"],
-      [/\b(worst|best|always|never|everyone|no one|destroy|ruin|kill)\b/gi, 0.15, "Extreme language"],
-      [/\b(idiot|stupid|moron|dumb|ignorant)\b/gi, 0.25, "Direct insult"],
-      [/^(why do|how can|explain why).*\?/gi, 0.2, "Bait question"],
-      [/[🔥💀😂🤡🤬😡🤮💩]{3,}/g, 0.15, "Emoji spam"],
-    ];
+    // Initialize with 30+ ragebait patterns
+    this.patterns = {
+      // 1. Formatting-based ragebait
+      allCaps: { regex: /^[^a-z]*[A-Z\s\d\W]{15,}[^a-z]*$/, weight: 0.35, name: "ALL CAPS screaming" },
+      exclaimSpam: { regex: /!{4,}/g, weight: 0.25, name: "Exclamation spam" },
+      questionSpam: { regex: /\?{4,}/g, weight: 0.2, name: "Question spam" },
+      ellipsisAbuse: { regex: /\.{5,}/g, weight: 0.15, name: "Dramatic ellipsis" },
+      mixedPunctuation: { regex: /[!?]{3,}/g, weight: 0.2, name: "Mixed punctuation chaos" },
+      asteriskEmphasis: { regex: /\*[^*]{3,}\*/g, weight: 0.1, name: "Forced emphasis" },
+      
+      // 2. Emotional manipulation
+      outrageWords: { regex: /\b(outraged|disgusted|appalled|shocked|horrified|furious|livid|enraged)\b/gi, weight: 0.3, name: "Outrage vocabulary" },
+      victimLanguage: { regex: /\b(can't believe|how dare|the audacity|unacceptable)\b/gi, weight: 0.25, name: "Victim framing" },
+      moralSuperiority: { regex: /\b(anyone with a brain|if you think|wake up|open your eyes)\b/gi, weight: 0.3, name: "Moral superiority" },
+      guiltTripping: { regex: /\b(if you care about|you're part of the problem|silence is violence)\b/gi, weight: 0.25, name: "Guilt tripping" },
+      fearMongering: { regex: /\b(they're coming for|it's only a matter of time|mark my words|just wait)\b/gi, weight: 0.3, name: "Fear mongering" },
+      
+      // 3. Divisive content
+      partisanTrigger: { regex: /\b(biden|trump|maga|commie|socialist|fascist|nazi)\b.*\b(destroying|ruining|hates|killing)\b/gi, weight: 0.4, name: "Partisan trigger" },
+      identityAttacks: { regex: /\b(all men|all women|white people|black people|jews|muslims|christians)\b.*\b(are|always|never)\b/gi, weight: 0.35, name: "Identity generalization" },
+      generationBashing: { regex: /\b(boomers|millennials|gen z|snowflakes|karens)\b.*\b(ruined|entitled|lazy|stupid)\b/gi, weight: 0.3, name: "Generation bashing" },
+      usVsThem: { regex: /\b(the left|the right|democrats|republicans|liberals|conservatives)\b.*\b(want|trying|plan)\b/gi, weight: 0.3, name: "Us vs them framing" },
+      
+      // 4. Clickbait patterns
+      curiosityGap: { regex: /\b(you won't believe|what happens next|the real reason|what they don't want you to know)\b/gi, weight: 0.35, name: "Curiosity gap" },
+      listicleBait: { regex: /\b(top \d+|\d+ reasons|\d+ things|\d+ ways)\b/gi, weight: 0.2, name: "Listicle bait" },
+      urgencyTrigger: { regex: /\b(breaking|urgent|just in|stop what you're doing)\b/gi, weight: 0.25, name: "False urgency" },
+      sensationalNumbers: { regex: /\b(millions|billions|trillions)\b.*\b(dead|dying|stolen|wasted)\b/gi, weight: 0.3, name: "Sensational numbers" },
+      
+      // 5. Conspiracy/rhetoric
+      conspiracyKeywords: { regex: /\b(wake up sheeple|do your research|follow the money|controlled opposition)\b/gi, weight: 0.35, name: "Conspiracy rhetoric" },
+      censorshipClaims: { regex: /\b(they're censoring|being silenced|won't let me say|thought police)\b/gi, weight: 0.25, name: "Censorship claim" },
+      sourceAttacks: { regex: /\b(mainstream media|fake news|biased media|propaganda)\b/gi, weight: 0.2, name: "Source dismissal" },
+      whataboutism: { regex: /\b(but what about|what about when|you didn't care about)\b/gi, weight: 0.25, name: "Whataboutism" },
+      
+      // 6. Aggressive engagement
+      calloutBait: { regex: /\b(tag someone|share if you agree|comment if|double tap if)\b/gi, weight: 0.25, name: "Engagement bait" },
+      challengeBait: { regex: /\b(i bet you can't|prove me wrong|change my mind|fight me)\b/gi, weight: 0.3, name: "Challenge bait" },
+      superiorityBait: { regex: /\b(only real fans|true patriots|smart people|people with iq)\b/gi, weight: 0.3, name: "Superiority bait" },
+      
+      // 7. Direct attacks
+      adHomien: { regex: /\b(idiot|stupid|moron|dumbass|retard|clown|npc|bot|shill)\b/gi, weight: 0.3, name: "Ad hominem attack" },
+      dismissiveLanguage: { regex: /\b(cope|seethe|rent free|touch grass|ratio|L+bozo)\b/gi, weight: 0.25, name: "Dismissive slang" },
+      dehumanizing: { regex: /\b(subhuman|scum|vermin|parasite|cancer|plague)\b/gi, weight: 0.4, name: "Dehumanizing language" },
+      
+      // 8. Emotional punctuation
+      emojiSpam: { regex: /[🔥💀😂🤡🤬😡🤮💩🤦🙄😤😠🖕]{3,}/g, weight: 0.2, name: "Emoji spam" },
+      laughingAt: { regex: /\b(lmao|lmfao|lol|rofl).{0,20}(stupid|idiot|wrong|dumb)\b/gi, weight: 0.2, name: "Laughing at someone" },
+      
+      // 9. Questionable assertions
+      absoluteStatements: { regex: /\b(every single|literally all|100% of|without exception)\b/gi, weight: 0.2, name: "Absolute statement" },
+      unverifiableClaims: { regex: /\b(everyone knows|it's obvious|clearly|undeniably)\b/gi, weight: 0.15, name: "Unverifiable claim" },
+      
+      // 10. Drama indicators
+      vagueBooking: { regex: /\b(some people|you know who you are|certain individuals|a lot of you)\b/gi, weight: 0.2, name: "Vaguebooking" },
+      subtweetStyle: { regex: /^(can't stand|sick of|tired of|done with)\s/i, weight: 0.2, name: "Subtweet style" },
+      martyrdom: { regex: /\b(here comes the hate|bring on the downvotes|unpopular opinion)\b/gi, weight: 0.25, name: "Martyrdom complex" },
+    };
+    
+    // Sentiment intensifiers that multiply scores
+    this.intensifiers = {
+      literally: { regex: /\bliterally\b/gi, multiplier: 1.2 },
+      actually: { regex: /\bactually\b/gi, multiplier: 1.1 },
+      honestly: { regex: /\bhonestly\b/gi, multiplier: 1.1 },
+      seriously: { regex: /\bseriously\b/gi, multiplier: 1.15 },
+    };
   }
 
   classify(text) {
     let score = 0;
     const reasons = [];
-    const textLower = text.toLowerCase();
-
-    for (const [pattern, weight, reason] of this.patterns) {
-      if (pattern.test(text)) {
-        score += weight;
-        if (!reasons.includes(reason)) {
-          reasons.push(reason);
+    const details = [];
+    
+    // Check each pattern
+    for (const [key, pattern] of Object.entries(this.patterns)) {
+      const matches = text.match(pattern.regex);
+      if (matches) {
+        score += pattern.weight;
+        if (!reasons.includes(pattern.name)) {
+          reasons.push(pattern.name);
+          details.push({ pattern: pattern.name, weight: pattern.weight, matches: matches.length });
         }
       }
     }
-
-    const words = text.split(/\s+/);
     
-    // Short angry messages
-    if (words.length <= 5 && score > 0.2) {
-      score += 0.1;
-      if (!reasons.includes("Short + angry")) reasons.push("Short + angry");
+    // Apply intensifiers
+    let multiplier = 1.0;
+    for (const [key, intensifier] of Object.entries(this.intensifiers)) {
+      if (intensifier.regex.test(text)) {
+        multiplier *= intensifier.multiplier;
+      }
     }
-
-    // Very long rant
-    if (words.length > 100 && score > 0.3) {
+    score *= multiplier;
+    
+    const words = text.split(/\s+/).filter(w => w.length > 0);
+    
+    // Message length heuristics
+    if (words.length <= 3 && score > 0.15) {
+      score += 0.15;
+      reasons.push("Very short + charged");
+    } else if (words.length <= 8 && score > 0.2) {
       score += 0.1;
-      if (!reasons.includes("Long rant")) reasons.push("Long rant");
+      reasons.push("Short + angry");
     }
-
+    
+    // Long rant detection
+    if (words.length > 150 && score > 0.25) {
+      score += 0.15;
+      reasons.push("Extended rant");
+    } else if (words.length > 80 && score > 0.3) {
+      score += 0.1;
+      reasons.push("Long rant");
+    }
+    
+    // Repetition detection
+    const wordFreq = {};
+    words.forEach(w => {
+      const lower = w.toLowerCase().replace(/[^a-z]/g, '');
+      if (lower.length > 3) {
+        wordFreq[lower] = (wordFreq[lower] || 0) + 1;
+      }
+    });
+    const repeatedWords = Object.entries(wordFreq).filter(([w, c]) => c > 2);
+    if (repeatedWords.length > 0 && score > 0.2) {
+      score += 0.1;
+      reasons.push("Repetition (agitation)");
+    }
+    
     // Cap at 1.0
     score = Math.min(score, 1.0);
-
-    // Determine category
+    
+    // Determine category with nuanced thresholds
     let category;
-    if (score < 0.2) category = "none";
-    else if (score < 0.4) category = "low";
-    else if (score < 0.6) category = "medium";
-    else category = "high";
-
-    return { score, reasons, category };
+    if (score < 0.15) category = "none";
+    else if (score < 0.35) category = "low";
+    else if (score < 0.55) category = "medium";
+    else if (score < 0.75) category = "high";
+    else category = "extreme";
+    
+    return { 
+      score, 
+      reasons, 
+      category,
+      details,
+      wordCount: words.length,
+      intensifier: multiplier > 1.0 ? `x${multiplier.toFixed(2)}` : null
+    };
+  }
+  
+  // Get breakdown for detailed analysis
+  getBreakdown(text) {
+    const result = this.classify(text);
+    return {
+      ...result,
+      patterns: result.details,
+      topTriggers: result.reasons.slice(0, 5),
+    };
   }
 }
 
@@ -74,72 +177,108 @@ const client = new Client({
 
 const classifier = new RagebaitClassifier();
 const monitoredChannels = new Set();
+const messageStats = { total: 0, flagged: { low: 0, medium: 0, high: 0, extreme: 0 } };
 
 client.on('ready', () => {
-  console.log(`🤖 ${client.user.tag} is online and monitoring for ragebait`);
+  console.log(`🤖 ${client.user.tag} is online with 30+ ragebait detectors`);
   console.log(`📊 Monitoring ${monitoredChannels.size} channels`);
 });
 
 client.on('messageCreate', async (message) => {
-  // Ignore bots
   if (message.author.bot) return;
 
-  // Check for commands
+  // Command handling
   if (message.content.startsWith('!')) {
     const args = message.content.slice(1).split(/\s+/);
     const command = args.shift().toLowerCase();
 
-    // !monitor - Start monitoring this channel
     if (command === 'monitor') {
       monitoredChannels.add(message.channel.id);
-      await message.reply(`🔍 Now monitoring ${message.channel} for ragebait`);
+      await message.reply(`🔍 Now monitoring ${message.channel} for ragebait (30+ features)`);
       return;
     }
 
-    // !unmonitor - Stop monitoring this channel
     if (command === 'unmonitor') {
       monitoredChannels.delete(message.channel.id);
       await message.reply(`🛑 Stopped monitoring ${message.channel}`);
       return;
     }
 
-    // !check <text> - Check if text is ragebait
     if (command === 'check') {
       const text = args.join(' ');
       if (!text) {
-        await message.reply('❌ Provide text to check: `!check <text>`');
+        await message.reply('❌ Provide text: `!check <text>`');
         return;
       }
       
-      const result = classifier.classify(text);
+      const result = classifier.getBreakdown(text);
       
-      let color = 0x00ff00; // Green
-      if (result.category === 'medium') color = 0xffa500; // Orange
-      else if (result.category === 'high') color = 0xff0000; // Red
+      let color = 0x00ff00;
+      if (result.category === 'medium') color = 0xffa500;
+      else if (result.category === 'high') color = 0xff0000;
+      else if (result.category === 'extreme') color = 0x8b0000;
 
       const embed = new EmbedBuilder()
-        .setTitle('Ragebait Analysis')
-        .setDescription(`Score: ${result.score.toFixed(2)}/1.0`)
+        .setTitle('🎯 Ragebait Analysis v2.0')
+        .setDescription(`Score: **${result.score.toFixed(3)}** / 1.0`)
         .setColor(color)
         .addFields(
-          { name: 'Indicators', value: result.reasons.join('\n• ') || 'None detected', inline: false },
-          { name: 'Verdict', value: result.category.toUpperCase(), inline: true }
+          { name: 'Category', value: result.category.toUpperCase(), inline: true },
+          { name: 'Words', value: String(result.wordCount), inline: true },
+          { name: 'Triggers', value: String(result.reasons.length), inline: true }
         );
+      
+      if (result.topTriggers.length > 0) {
+        embed.addFields({
+          name: 'Top Indicators',
+          value: result.topTriggers.map((r, i) => `${i+1}. ${r}`).join('\n'),
+          inline: false
+        });
+      }
+      
+      if (result.intensifier) {
+        embed.addFields({ name: 'Intensifier', value: result.intensifier, inline: true });
+      }
       
       await message.reply({ embeds: [embed] });
       return;
     }
 
-    // !stats - Show monitoring stats
     if (command === 'stats') {
       const channels = Array.from(monitoredChannels).map(id => `<#${id}>`);
       const embed = new EmbedBuilder()
-        .setTitle('Ragebait Monitor Status')
-        .addFields({
-          name: 'Monitored Channels',
-          value: channels.join('\n') || 'None',
-          inline: false
-        });
+        .setTitle('📊 Ragebait Monitor Stats')
+        .addFields(
+          { name: 'Monitored Channels', value: channels.join('\n') || 'None', inline: false },
+          { name: 'Messages Processed', value: String(messageStats.total), inline: true },
+          { name: 'Flagged Messages', value: String(
+            messageStats.flagged.low + 
+            messageStats.flagged.medium + 
+            messageStats.flagged.high +
+            messageStats.flagged.extreme
+          ), inline: true }
+        );
+      await message.reply({ embeds: [embed] });
+      return;
+    }
+    
+    if (command === 'features') {
+      const embed = new EmbedBuilder()
+        .setTitle('🔧 Ragebait Detection Features (30+)')
+        .setDescription('Categories of ragebait detection')
+        .addFields(
+          { name: '1. Formatting', value: 'ALL CAPS, punctuation spam, ellipsis abuse, emphasis', inline: true },
+          { name: '2. Emotional', value: 'Outrage words, victim framing, guilt tripping, fear mongering', inline: true },
+          { name: '3. Divisive', value: 'Partisan triggers, identity attacks, generation bashing', inline: true },
+          { name: '4. Clickbait', value: 'Curiosity gaps, listicles, false urgency, sensational numbers', inline: true },
+          { name: '5. Conspiracy', value: 'Rhetoric, censorship claims, source attacks, whataboutism', inline: true },
+          { name: '6. Engagement', value: 'Callout bait, challenge bait, superiority bait', inline: true },
+          { name: '7. Attacks', value: 'Ad hominem, dismissive slang, dehumanizing', inline: true },
+          { name: '8. Punctuation', value: 'Emoji spam, laughing at others', inline: true },
+          { name: '9. Assertions', value: 'Absolute statements, unverifiable claims', inline: true },
+          { name: '10. Drama', value: 'Vaguebooking, subtweets, martyrdom', inline: true }
+        )
+        .setFooter({ text: 'Plus: length heuristics, repetition detection, intensifier multipliers' });
       await message.reply({ embeds: [embed] });
       return;
     }
@@ -147,40 +286,45 @@ client.on('messageCreate', async (message) => {
     return;
   }
 
-  // Only process monitored channels
+  // Monitoring
   if (!monitoredChannels.has(message.channel.id)) return;
 
-  // Classify the message
+  messageStats.total++;
   const result = classifier.classify(message.content);
 
-  // React based on score
-  if (result.category === 'high') {
-    await message.react('🚩');
-    // Optionally send analysis
-    // await sendAnalysis(message, result);
-  } else if (result.category === 'medium') {
-    await message.react('⚠️');
-  } else if (result.category === 'low') {
-    await message.react('🤔');
+  // React based on category
+  const reactions = {
+    none: null,
+    low: '🤔',
+    medium: '⚠️',
+    high: '🚩',
+    extreme: '🔥'
+  };
+
+  if (reactions[result.category]) {
+    await message.react(reactions[result.category]);
+    messageStats.flagged[result.category]++;
   }
+  
+  // Optional: DM for extreme cases
+  // if (result.category === 'extreme') {
+  //   await sendAnalysis(message, result);
+  // }
 });
 
 async function sendAnalysis(message, result) {
   const embed = new EmbedBuilder()
-    .setTitle('🚩 Ragebait Detected')
-    .setDescription(`Score: ${result.score.toFixed(2)}/1.0`)
-    .setColor(0xff0000)
+    .setTitle('🔥 Extreme Ragebait Detected')
+    .setDescription(`Score: ${result.score.toFixed(3)} / 1.0`)
+    .setColor(0x8b0000)
     .addFields(
-      { name: 'Indicators', value: result.reasons.slice(0, 5).join('\n• '), inline: false },
-      { name: 'Category', value: result.category.toUpperCase(), inline: true }
+      { name: 'Author', value: message.author.tag, inline: true },
+      { name: 'Channel', value: message.channel.name, inline: true },
+      { name: 'Indicators', value: result.reasons.slice(0, 5).join('\n• '), inline: false }
     );
   
-  // Option 1: Reply to message
-  // await message.reply({ embeds: [embed] });
-  
-  // Option 2: Send to log channel (replace LOG_CHANNEL_ID)
-  // const logChannel = await client.channels.fetch('LOG_CHANNEL_ID');
-  // if (logChannel) await logChannel.send({ embeds: [embed] });
+  // Could log to a mod channel
+  console.log('EXTREME:', message.content.substring(0, 100));
 }
 
 // Error handling
