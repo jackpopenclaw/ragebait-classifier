@@ -258,6 +258,30 @@ const classifier = new RagebaitClassifier();
 const monitoredChannels = new Set();
 const messageStats = { total: 0, flagged: { low: 0, medium: 0, high: 0, extreme: 0 } };
 
+// High score tracking
+let ragebaitHighScore = { score: 0, message: '', author: '', timestamp: null };
+const HIGH_SCORE_FILE = path.join(__dirname, 'highscore.json');
+
+// Load existing high score
+try {
+  if (fs.existsSync(HIGH_SCORE_FILE)) {
+    const data = fs.readFileSync(HIGH_SCORE_FILE, 'utf8');
+    ragebaitHighScore = JSON.parse(data);
+    console.log(`🏆 Loaded high score: ${ragebaitHighScore.score.toFixed(3)} by ${ragebaitHighScore.author}`);
+  }
+} catch (err) {
+  console.log('ℹ️ No previous high score found');
+}
+
+// Save high score to file
+function saveHighScore() {
+  try {
+    fs.writeFileSync(HIGH_SCORE_FILE, JSON.stringify(ragebaitHighScore, null, 2));
+  } catch (err) {
+    console.log('⚠️ Could not save high score:', err.message);
+  }
+}
+
 client.on('ready', () => {
   console.log(`🤖 ${client.user.tag} is online with 30+ ragebait detectors`);
   console.log(`📊 Monitoring ${monitoredChannels.size} channels`);
@@ -335,8 +359,32 @@ client.on('messageCreate', async (message) => {
             messageStats.flagged.medium + 
             messageStats.flagged.high +
             messageStats.flagged.extreme
-          ), inline: true }
+          ), inline: true },
+          { name: '🏆 High Score', value: `${ragebaitHighScore.score.toFixed(3)} by ${ragebaitHighScore.author || 'Unknown'}`, inline: true }
         );
+      await message.reply({ embeds: [embed] });
+      return;
+    }
+    
+    if (command === 'highscore') {
+      const embed = new EmbedBuilder()
+        .setTitle('🏆 Ragebait High Score')
+        .setColor(0xffd700)
+        .setDescription(`The most ragebait message ever recorded!`)
+        .addFields(
+          { name: 'Score', value: `${ragebaitHighScore.score.toFixed(3)}/1.0`, inline: true },
+          { name: 'Champion', value: ragebaitHighScore.author || 'Unknown', inline: true },
+          { name: 'Date', value: ragebaitHighScore.timestamp ? new Date(ragebaitHighScore.timestamp).toLocaleDateString() : 'Never', inline: true }
+        );
+      
+      if (ragebaitHighScore.message) {
+        embed.addFields({
+          name: 'Message Preview',
+          value: ragebaitHighScore.message.substring(0, 100) + (ragebaitHighScore.message.length > 100 ? '...' : ''),
+          inline: false
+        });
+      }
+      
       await message.reply({ embeds: [embed] });
       return;
     }
@@ -385,18 +433,43 @@ client.on('messageCreate', async (message) => {
     messageStats.flagged[result.category]++;
   }
   
+  // Check for new high score
+  const isNewHighScore = result.score > ragebaitHighScore.score;
+  if (isNewHighScore && result.score > 0.5) {
+    ragebaitHighScore = {
+      score: result.score,
+      message: message.content.substring(0, 200),
+      author: message.author.tag,
+      timestamp: new Date().toISOString()
+    };
+    saveHighScore();
+    console.log(`🏆 NEW HIGH SCORE: ${result.score.toFixed(3)} by ${message.author.tag}`);
+  }
+  
   // Send ASCII art for high/extreme ragebait
   if ((result.category === 'high' || result.category === 'extreme') && asciiArt) {
     try {
-      // Truncate if too long for Discord (max 2000 chars)
-      const artToSend = asciiArt.length > 1900 
-        ? asciiArt.substring(0, 1900) + '\n... [art truncated]'
-        : asciiArt;
-      
-      await message.reply({
-        content: `🐱 **Ragebait detected! Enjoy this ASCII cat:**\n\`\`\`\n${artToSend}\n\`\`\``,
-        allowedMentions: { repliedUser: false }
-      });
+      if (isNewHighScore) {
+        // NEW HIGH SCORE - send extra ASCII art
+        const artLines = asciiArt.split('\n');
+        const artHalf1 = artLines.slice(0, Math.ceil(artLines.length / 2)).join('\n');
+        const artHalf2 = artLines.slice(Math.floor(artLines.length / 2)).join('\n');
+        
+        await message.reply({
+          content: `🏆 **NEW RAGEBAIT HIGH SCORE!** 🏆\n**Score:** ${result.score.toFixed(3)}/1.0 (Previous: ${(ragebaitHighScore.score || 0).toFixed(3)})\n\n🐱 **TRIPLE ASCII ART FOR THE CHAMPION:**\n\`\`\`\n${asciiArt}\n\`\`\`\n\`\`\`\n${asciiArt}\n\`\`\`\n\`\`\`\n${asciiArt}\n\`\`\`\n👑 Congratulations ${message.author}! You've achieved the most ragebait message ever recorded!`,
+          allowedMentions: { repliedUser: false }
+        });
+      } else {
+        // Regular high/extreme - send normal ASCII art
+        const artToSend = asciiArt.length > 1900 
+          ? asciiArt.substring(0, 1900) + '\n... [art truncated]'
+          : asciiArt;
+        
+        await message.reply({
+          content: `🐱 **Ragebait detected! Enjoy this ASCII cat:**\n\`\`\`\n${artToSend}\n\`\`\`\n🏆 Current high score: ${ragebaitHighScore.score.toFixed(3)} by ${ragebaitHighScore.author || 'Unknown'}`,
+          allowedMentions: { repliedUser: false }
+        });
+      }
     } catch (err) {
       console.log('Failed to send ASCII art:', err.message);
     }

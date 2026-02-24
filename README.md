@@ -38,9 +38,10 @@ npm start
 | `!unmonitor` | Stop monitoring current channel |
 | `!check <text>` | Analyze specific text with breakdown |
 | `!stats` | Show monitoring statistics |
-| `!features` | List all 30+ detection features |
+| `!highscore` | Show current ragebait high score champion |
+| `!features` | List all 50+ detection features |
 
-## Detection Categories (30+ Features)
+## Detection Categories (50+ Features)
 
 ### 1. Formatting-Based
 - ALL CAPS screaming
@@ -178,6 +179,28 @@ Indicators:
 • Fear mongering
 • Ad hominem attack
 • Dehumanizing language
+```
+
+## Special Features
+
+### 🐱 ASCII Art Responses
+When high or extreme ragebait is detected, the bot replies with a giant ASCII cat!
+
+### 🏆 High Score Tracking
+The bot tracks the highest ragebait score ever achieved:
+- Use `!highscore` to see the current champion
+- Beat the high score and get **TRIPLE ASCII ART** as a reward
+- High scores persist between restarts (saved to `highscore.json`)
+
+**New High Score Notification:**
+```
+🏆 NEW RAGEBAIT HIGH SCORE! 🏆
+Score: 0.987/1.0 (Previous: 0.923)
+
+🐱 TRIPLE ASCII ART FOR THE CHAMPION:
+[ASCII art x3]
+
+👑 Congratulations @User! You've achieved the most ragebait message ever recorded!
 ```
 
 ## Development
