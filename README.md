@@ -97,6 +97,49 @@ npm start
 - Subtweet style
 - Martyrdom complex
 
+### 11. Platform-Specific (NEW)
+- LinkedIn humble brags
+- Reddit awards bait
+- YouTube comment spam
+- TikTok speak
+- Stan culture language
+
+### 12. Crypto/NFT Culture (NEW)
+- Crypto bro speak (to the moon, diamond hands)
+- NFT hype language (WL, mint, utility)
+
+### 13. Gaming Toxicity (NEW)
+- Gaming toxicity (ggez, git gud, kys)
+- Rage quit energy
+
+### 14. Corporate Speak (NEW)
+- Corporate buzzwords (synergy, leverage, paradigm)
+- Hustle culture (grind, sigma, alpha)
+
+### 15. Fake News Indicators (NEW)
+- Fake news flags ("trust me bro", "big pharma")
+- Anecdote presented as data
+
+### 16. Bad Faith Engagement (NEW)
+- Sealioning ("just asking questions")
+- Bad faith debate tactics
+
+### 17. Self-Promotion Spam (NEW)
+- Self promotion spam
+- Engagement farming
+
+### 18. Callout Culture (NEW)
+- Repost shaming
+- Gatekeeping ("fake fan", "real ones know")
+
+### 19. Historical Revisionism (NEW)
+- History rewrite attempts
+- Lost cause rhetoric
+
+### 20. Threat Indicators (NEW)
+- Veiled threats
+- Doxxing hints
+
 ### Bonus Heuristics
 - Message length analysis (short angry vs long rant)
 - Repetition detection (agitation indicator)

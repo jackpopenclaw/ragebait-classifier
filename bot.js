@@ -1,5 +1,5 @@
-// Ragebait Classifier Bot for Discord v2.0
-// 30+ detection features
+// Ragebait Classifier Bot for Discord v3.0
+// 50+ detection features
 
 const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
 require('dotenv').config();
@@ -63,6 +63,49 @@ class RagebaitClassifier {
       vagueBooking: { regex: /\b(some people|you know who you are|certain individuals|a lot of you)\b/gi, weight: 0.2, name: "Vaguebooking" },
       subtweetStyle: { regex: /^(can't stand|sick of|tired of|done with)\s/i, weight: 0.2, name: "Subtweet style" },
       martyrdom: { regex: /\b(here comes the hate|bring on the downvotes|unpopular opinion)\b/gi, weight: 0.25, name: "Martyrdom complex" },
+      
+      // 11. Platform-specific ragebait (NEW)
+      linkedInHumbleBrag: { regex: /\b(grateful|honored|humbled|blessed).*\b(announce|share|thrilled)\b/gi, weight: 0.2, name: "LinkedIn humble brag" },
+      redditAwardsBait: { regex: /\b(edit:|thanks for the gold|obligatory|first time posting)\b/gi, weight: 0.15, name: "Reddit awards bait" },
+      youtubeComment: { regex: /\b(who's watching|first comment|notification squad|anyone here from)\b/gi, weight: 0.2, name: "YouTube comment spam" },
+      tikTokSpeak: { regex: /\b(no because|not me|the way that|POV:|storytime)\b/gi, weight: 0.15, name: "TikTok speak" },
+      stanCulture: { regex: /\b(mother|queen|king|slay|ate that|serving|periodt)\b/gi, weight: 0.1, name: "Stan culture" },
+      
+      // 12. Crypto/NFT bro language (NEW)
+      cryptoBro: { regex: /\b(to the moon|hodl|diamond hands|paper hands|buy the dip|ngmi|wagmi|few understand)\b/gi, weight: 0.25, name: "Crypto bro speak" },
+      nftHype: { regex: /\b(discord|WL|mint|roadmap|utility|community|gm|ser)\b.*\b(dropping|launching)\b/gi, weight: 0.2, name: "NFT hype language" },
+      
+      // 13. Gaming toxicity (NEW)
+      gamingToxic: { regex: /\b(ggez|git gud|trash|garbage|uninstall|kys|kill yourself|ez pz)\b/gi, weight: 0.35, name: "Gaming toxicity" },
+      rageQuitVibe: { regex: /\b(this game is rigged|broken|devs are|unplayable|refund)\b/gi, weight: 0.25, name: "Rage quit energy" },
+      
+      // 14. Corporate speak (NEW)
+      corporateNonsense: { regex: /\b(synergy|leverage|paradigm|circle back|moving forward|touch base|best practice)\b/gi, weight: 0.15, name: "Corporate buzzwords" },
+      hustleCulture: { regex: /\b(grind|hustle|5am|sigma|alpha|rise and grind|boss mindset)\b/gi, weight: 0.2, name: "Hustle culture" },
+      
+      // 15. Fake news indicators (NEW)
+      fakeNewsFlags: { regex: /\b(my cousin's friend|trust me bro|do your own research|big pharma|mainstream)\b/gi, weight: 0.3, name: "Fake news indicators" },
+      anecdoteAsData: { regex: /\b(i know someone|my friend's|happened to me|i've seen)\b.*\b(proves|shows|means)\b/gi, weight: 0.25, name: "Anecdote as data" },
+      
+      // 16. Sealioning/persistence (NEW)
+      sealioning: { regex: /\b(sources\?|got any proof|evidence\?|just asking|simply curious|devil's advocate)\b/gi, weight: 0.2, name: "Sealioning" },
+      badFaithDebate: { regex: /\b(but technically|actually|to be fair|not all|what about)\b.*\?/gi, weight: 0.15, name: "Bad faith debate" },
+      
+      // 17. Self-promotion spam (NEW)
+      selfPromo: { regex: /\b(check out my|subscribe|follow me|link in bio|promo code|use my code)\b/gi, weight: 0.2, name: "Self promotion" },
+      engagementFarming: { regex: /\b(drop a|comment your|reply with|let's see)\b.*\b(below|in comments)\b/gi, weight: 0.25, name: "Engagement farming" },
+      
+      // 18. Repost/callout culture (NEW)
+      repostShaming: { regex: /\b(repost|seen this|posted yesterday|original content|stealing)\b/gi, weight: 0.15, name: "Repost shaming" },
+      gatekeeping: { regex: /\b(not a real|fake fan|only true|if you really|real ones know)\b/gi, weight: 0.25, name: "Gatekeeping" },
+      
+      // 19. Historical revisionism (NEW)
+      historyRewrite: { regex: /\b(actually happened|the truth about|history books won't|they don't teach)\b/gi, weight: 0.3, name: "Historical revisionism" },
+      lostCause: { regex: /\b(state's rights|heritage not hate|different times|both sides)\b/gi, weight: 0.35, name: "Lost cause rhetoric" },
+      
+      // 20. Threats/doxxing hints (NEW)
+      veiledThreats: { regex: /\b(watch your back|better hope|would be a shame|someone should|i know where)\b/gi, weight: 0.4, name: "Veiled threats" },
+      doxxingHints: { regex: /\b(found your|i know|your address|where you live|your workplace)\b/gi, weight: 0.45, name: "Doxxing indicators" },
     };
     
     // Sentiment intensifiers that multiply scores
